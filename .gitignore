@@ -1,0 +1,13 @@
+# مخرجات التشغيل — ليست جزءًا من المشاريع
+**/sorted-emails.csv
+**/output/
+**/*.local.*
+
+# أسرار
+*token*
+*credential*
+*-key.json
+.env
+
+node_modules/
+.DS_Store

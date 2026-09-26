@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>مشاريع سوّي — كل فيديو ومعه مشروع كامل</title>
+<meta name="description" content="مشاريع ذكاء اصطناعي جاهزة للتحميل والتشغيل، مبنية للسياق السعودي، تعمل باشتراك Claude بلا مفتاح API.">
+<meta property="og:title" content="مشاريع سوّي">
+<meta property="og:description" content="كل فيديو ومعه مشروع كامل — تحمّله وتشغّله على شغلك.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<style>
+:root{
+  color-scheme: dark;
+  --qahwa:#22160F; --qahwa-2:#2E1F16; --saffron:#F5A524; --hail:#7DB46C;
+  --ink:#F4EFE9; --ink-soft:#C3B2A4; --ink-dim:#8B7869;
+  --line:rgba(245,165,36,.16); --line-soft:rgba(244,239,233,.10);
+  --display:"Alexandria","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans Arabic","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+body{margin:0;background:var(--qahwa);color:var(--ink);font-family:var(--body);
+  font-size:17px;line-height:1.85;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px;margin:0 auto;padding-inline:20px}
+h1,h2,h3{font-family:var(--display);line-height:1.22;margin:0;text-wrap:balance}
+a{color:var(--saffron)}
+:focus-visible{outline:3px solid var(--saffron);outline-offset:3px;border-radius:4px}
+.eyebrow{font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:.14em;
+  color:var(--saffron);text-transform:uppercase;margin-bottom:14px}
+
+.hero{position:relative;overflow:hidden;padding-block:58px 64px;border-bottom:1px solid var(--line)}
+.shadda{position:absolute;inset-inline-start:-70px;top:-40px;width:min(400px,58vw);
+  color:var(--saffron);opacity:.07;pointer-events:none}
+.hero .wrap{position:relative}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:40px}
+.brand svg{width:32px;height:32px;color:var(--saffron)}
+.brand span{font-family:var(--display);font-weight:900;font-size:20px}
+h1{font-size:clamp(34px,6vw,60px);font-weight:900;letter-spacing:-.02em;max-width:16ch}
+h1 em{font-style:normal;color:var(--saffron)}
+.lede{font-size:clamp(17px,2.1vw,20px);color:var(--ink-soft);max-width:54ch;margin:20px 0 0}
+.badges{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border:1px solid var(--line);
+  border-radius:999px;background:rgba(245,165,36,.06);font-size:14.5px}
+.badge b{color:var(--saffron);font-weight:600}
+
+.list{padding-block:56px;border-bottom:1px solid var(--line)}
+.cards{display:grid;gap:18px;margin-top:30px}
+.card{display:grid;grid-template-columns:62px 1fr auto;gap:20px;align-items:start;
+  background:var(--qahwa-2);border:1px solid var(--line-soft);border-radius:16px;padding:24px;
+  transition:border-color .15s ease,transform .15s ease}
+.card:hover{border-color:var(--line);transform:translateY(-2px)}
+.card-n{font-family:var(--display);font-weight:900;font-size:30px;color:var(--saffron);
+  font-variant-numeric:tabular-nums;line-height:1.1}
+.card h3{font-size:20px;font-weight:700;margin-bottom:7px}
+.card h3 a{text-decoration:none;color:var(--ink)}
+.card h3 a:hover{color:var(--saffron)}
+.card p{margin:0 0 14px;color:var(--ink-soft);font-size:16px}
+.tags{display:flex;flex-wrap:wrap;gap:7px}
+.tag{font-size:12.5px;padding:4px 11px;border-radius:999px;background:rgba(244,239,233,.06);
+  color:var(--ink-dim);font-family:var(--display);font-weight:700}
+.tag.ok{background:rgba(125,180,108,.14);color:var(--hail)}
+.dl{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:10px;
+  background:var(--saffron);color:var(--qahwa);text-decoration:none;
+  font-family:var(--display);font-weight:700;font-size:14.5px;white-space:nowrap}
+.dl:hover{background:#FFB840}
+
+.next{background:var(--qahwa-2);border:1px dashed var(--line);border-radius:16px;
+  padding:26px;margin-top:18px;text-align:center;color:var(--ink-dim)}
+.next b{color:var(--ink-soft);font-family:var(--display)}
+
+.req{padding-block:52px;border-bottom:1px solid var(--line)}
+.console{margin-top:24px;background:#150D08;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.console-bar{display:flex;gap:8px;padding:12px 17px;border-bottom:1px solid var(--line-soft);
+  background:rgba(244,239,233,.03)}
+.dot{width:10px;height:10px;border-radius:50%}
+.console pre{margin:0;padding:20px;overflow-x:auto;direction:ltr;text-align:left;
+  font-family:ui-monospace,"Cascadia Mono",Menlo,monospace;font-size:13.5px;line-height:2;color:var(--ink-soft)}
+.console pre b{color:var(--saffron);font-weight:600}
+.console pre i{color:var(--ink-dim);font-style:normal}
+
+.note{padding-block:52px;border-bottom:1px solid var(--line)}
+.warn{background:rgba(245,165,36,.07);border:1px solid var(--line);border-radius:14px;padding:24px;margin-top:20px}
+.warn ul{margin:12px 0 0;padding-inline-start:20px;color:var(--ink-soft)}
+.warn li{margin-bottom:7px}
+
+footer{padding-block:42px 54px;text-align:center}
+footer svg{width:28px;height:28px;color:var(--saffron);opacity:.6;margin-bottom:12px}
+footer p{margin:0 0 6px;color:var(--ink-dim);font-size:14.5px}
+.slogan{font-family:var(--display);font-weight:700;color:var(--ink-soft);font-size:16px}
+
+@media (max-width:700px){
+  .card{grid-template-columns:44px 1fr;gap:14px}
+  .card .dl{grid-column:1 / -1;justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="shadda" viewBox="0 0 100 60">
+    <path fill="currentColor" d="M8 44c6-16 16-26 27-26 8 0 12 5 12 11 0 5-3 9-7 12l-6-5c2-2 4-4 4-7 0-3-2-5-5-5-6 0-12 7-16 20zm42 0c6-16 16-26 27-26 8 0 12 5 12 11 0 5-3 9-7 12l-6-5c2-2 4-4 4-7 0-3-2-5-5-5-6 0-12 7-16 20z"/>
+  </symbol>
+</svg>
+
+<header class="hero">
+  <svg class="shadda" aria-hidden="true"><use href="#shadda"/></svg>
+  <div class="wrap">
+    <div class="brand">
+      <svg viewBox="0 0 100 60" aria-hidden="true"><use href="#shadda"/></svg>
+      <span>سوّي</span>
+    </div>
+    <p class="eyebrow">مفتوحة المصدر · مجانية</p>
+    <h1>كل فيديو ومعه <em>مشروع كامل</em></h1>
+    <p class="lede">
+      لا شروحات نظرية ولا لقطات شاشة. كل مشروع هنا نظام يشتغل فعلًا،
+      مبني لشغل سعودي حقيقي، تحمّله وتشغّله على جهازك خلال دقيقتين.
+    </p>
+    <div class="badges">
+      <span class="badge"><b>بلا</b> مفتاح API</span>
+      <span class="badge"><b>بلا</b> بطاقة دفع</span>
+      <span class="badge"><b>بلا</b> اشتراك إضافي</span>
+    </div>
+  </div>
+</header>
+
+<section class="list">
+  <div class="wrap">
+    <p class="eyebrow">المشاريع</p>
+    <h2 style="font-size:clamp(25px,3.4vw,36px);font-weight:900">جاهزة للتحميل الآن</h2>
+
+    <div class="cards">
+      <article class="card">
+        <span class="card-n">٠١</span>
+        <div>
+          <h3><a href="https://github.com/Asmaabdu221/sawwi-projects/tree/main/projects/hr-email-sorter">فارز بريد الموارد البشرية</a></h3>
+          <p>
+            يقرأ رسائل بريد العمل ويصنّفها إلى إجازة وتوظيف وشكوى واستفسار ومتابعة،
+            ويحدّد العاجل منها، ويكتب مسودات الردود — عدا الشكاوى، فهي تُقرأ بعين إنسان.
+          </p>
+          <div class="tags">
+            <span class="tag ok">مُختبَر ٨/٨</span>
+            <span class="tag">موارد بشرية</span>
+            <span class="tag">بلا تثبيت حزم</span>
+            <span class="tag">~٥٠ ثانية</span>
+          </div>
+        </div>
+        <a class="dl" href="https://github.com/Asmaabdu221/sawwi-projects/releases/tag/hr-email-sorter">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+            <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/>
+          </svg>
+          تحميل
+        </a>
+      </article>
+    </div>
+
+    <div class="next">
+      <b>المشروع القادم</b> مع الفيديو القادم — تابع الحساب.
+    </div>
+  </div>
+</section>
+
+<section class="req">
+  <div class="wrap">
+    <p class="eyebrow">مرة واحدة</p>
+    <h2 style="font-size:clamp(25px,3.4vw,36px);font-weight:900">جهّز جهازك — ثلاث دقائق</h2>
+    <p style="color:var(--ink-soft);margin-top:14px;max-width:52ch">
+      تسويها مرة، وتشتغل كل المشاريع بعدها بلا أي إعداد إضافي.
+    </p>
+
+    <div class="console">
+      <div class="console-bar">
+        <span class="dot" style="background:#FF5F57"></span>
+        <span class="dot" style="background:#FEBC2E"></span>
+        <span class="dot" style="background:#28C840"></span>
+      </div>
+      <pre><b>$</b> node --version
+v22.21.0                          <i># يلزم 20 أو أحدث</i>
+
+<b>$</b> npm install -g @anthropic-ai/claude-code
+
+<b>$</b> claude
+<i># سجّل الدخول باشتراكك — مرة واحدة فقط</i></pre>
+    </div>
+  </div>
+</section>
+
+<section class="note">
+  <div class="wrap">
+    <p class="eyebrow">اقرأها</p>
+    <h2 style="font-size:clamp(25px,3.4vw,36px);font-weight:900">قبل أي بيانات حقيقية</h2>
+
+    <div class="warn">
+      <p style="margin:0;color:var(--ink)">
+        هذه المشاريع ترسل ما تعطيها إلى Claude — تمامًا كما لو لصقته في المحادثة بنفسك.
+      </p>
+      <ul>
+        <li>جرّب على بيانات المثال المرفقة أولًا</li>
+        <li>راجع سياسة شركتك في مشاركة البيانات</li>
+        <li>خذ موافقة إدارتك قبل البيانات الحساسة</li>
+      </ul>
+      <p style="margin:14px 0 0;color:var(--ink-dim);font-size:15px">
+        كل مشروع يذكر في دليله ما يرسله وما لا يرسله بالضبط.
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <svg viewBox="0 0 100 60" aria-hidden="true"><use href="#shadda"/></svg>
+    <p class="slogan">خلّ الذكاء الاصطناعي يسوّيها.</p>
+    <p>رخصة MIT · بُني في السعودية</p>
+    <p>
+      <a href="https://github.com/Asmaabdu221/sawwi-projects">المستودع</a> ·
+      <a href="https://github.com/Asmaabdu221/sawwi-autopilot">الأداة التي تصنع هذا المحتوى</a>
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>
