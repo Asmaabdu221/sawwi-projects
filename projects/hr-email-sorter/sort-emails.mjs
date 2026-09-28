@@ -213,6 +213,32 @@ async function pickEngine() {
   const out = join(HERE, 'sorted-emails.csv');
   writeFileSync(out, '﻿' + lines.join('\n'), 'utf8');
 
+  // المسودات في ملف يُقرأ وتُنسخ منه، لا في عمود داخل Excel
+  let draftsPath = null;
+  if (WITH_DRAFTS) {
+    const withDraft = results.filter((r) => String(r.draft || '').trim());
+    const noDraft = results.filter((r) => !String(r.draft || '').trim());
+    const md = ['# مسودات الردود', '',
+      'راجعها قبل الإرسال. أنت من يرسل، لا البرنامج.', '', '---', ''];
+    for (const r of withDraft) {
+      const e = emails[r.index] || {};
+      md.push('## ' + e.subject, '',
+        '**إلى:** ' + e.from + '  ',
+        '**الفئة:** ' + r.category + (r.urgent ? ' · ⚡ عاجلة' : '') + '  ',
+        '**ثقة التصنيف:** ' + r.confidence, '', '> ' + String(r.draft).replace(/\n/g, '\n> '), '', '---', '');
+    }
+    if (noDraft.length) {
+      md.push('## بلا مسودة — تُقرأ بعين إنسان', '');
+      for (const r of noDraft) {
+        const e = emails[r.index] || {};
+        md.push('- **' + e.subject + '** — ' + r.category + ' · ' + e.from);
+      }
+      md.push('', 'الشكاوى والمواضيع الحساسة لا تُكتب لها ردود آلية. عمدًا.');
+    }
+    draftsPath = join(HERE, 'drafts.md');
+    writeFileSync(draftsPath, md.join('\n'), 'utf8');
+  }
+
   const urgent = results.filter((r) => r.urgent).length;
   const low = results.filter((r) => r.confidence === 'منخفضة').length;
 
@@ -221,6 +247,10 @@ async function pickEngine() {
   if (urgent) console.log(`${C.y}⚡${C.r} ${urgent} عاجلة تحتاج ردًا اليوم`);
   if (low) console.log(`${C.y}!${C.r} ${low} تحتاج مراجعتك — الثقة منخفضة`);
   console.log(`${C.g}✓${C.r} الملف: sorted-emails.csv ${C.dim}(افتحه بـExcel)${C.r}`);
+  if (draftsPath) {
+    const n = results.filter((r) => String(r.draft || '').trim()).length;
+    console.log(`${C.g}✓${C.r} المسودات: drafts.md ${C.dim}(${n} ردًا جاهزًا للمراجعة)${C.r}`);
+  }
   if (!WITH_DRAFTS && engine.name !== 'rules') {
     console.log(`\n${C.dim}للحصول على مسودات ردود:  node sort-emails.mjs --drafts${C.r}`);
   }
