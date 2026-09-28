@@ -132,17 +132,40 @@ node sort-emails.mjs --drafts
 
 ## شغّله على بريدك
 
-صدّر رسائلك إلى CSV بثلاثة أعمدة:
+### الطريقة الأولى: احفظ الرسائل وحوّلها — بلا Excel
+
+احفظ الرسائل التي تريد فرزها من بريدك:
+
+| بريدك | كيف تحفظ رسالة |
+|---|---|
+| **Gmail** | افتح الرسالة ← ⋮ ← **Download message** |
+| **Outlook على المتصفح** | افتح الرسالة ← ⋯ ← **Download** |
+| **Thunderbird** | حدّد الرسائل واسحبها إلى مجلد |
+
+ضعها كلها في مجلد اسمه `emails` بجانب المشروع، ثم:
+
+```bash
+node eml-to-csv.mjs
+node sort-emails.mjs my-emails.csv
+```
+
+يقرأ العربية من الترميزات التي تستخدمها عملاء البريد، وينظّف الاقتباسات وتوقيع الرد السابق.
+
+### الطريقة الثانية: القالب الجاهز
+
+افتح **`my-emails.csv`** بـExcel، امسح سطر المثال، والصق رسائلك في ثلاثة أعمدة:
 ```csv
 from,subject,body
 ahmed@company.sa,طلب إجازة,السلام عليكم، أرغب بإجازة من ١٠ إلى ١٧...
 ```
+ثم احفظ بصيغة **`CSV UTF-8 (Comma delimited)`** — لا «CSV» وحدها، وإلا تحوّلت العربية رموزًا. المشروع يكشف هذا ويخبرك.
+
 ```bash
 node sort-emails.mjs my-emails.csv
 ```
 
 <details>
-<summary><b>كيف تصدّر من Outlook</b></summary>
+<summary><b>تصدير دفعة واحدة من Outlook المكتبي</b></summary>
 
 File ← Open & Export ← Import/Export ← Export to a file ← Comma Separated Values ← اختر المجلد ← احفظ.
 ثم افتح الملف بـExcel واحتفظ بأعمدة `From` و`Subject` و`Body` فقط، وسمّها بالإنجليزي الصغير: `from,subject,body`.
@@ -210,6 +233,8 @@ Gmail لا يصدّر CSV مباشرة. أسهل طريقة: افتح Google She
 | `engines.mjs` | المحرّكات الثلاثة — اقرأه إن أردت فهم كيف تشتغل |
 | `categories.json` | إعداداتك — عدّل هنا فقط |
 | `sample-emails.csv` | ثمان رسائل للتجربة الفورية |
+| `eml-to-csv.mjs` | يحوّل رسائل محفوظة من بريدك إلى ملف جاهز |
+| `my-emails.csv` | قالب تملؤه بنفسك |
 | `benchmark-emails.csv` | ١٢ رسالة ومعها الجواب الصحيح — بها قِست الأرقام أعلاه |
 | `benchmark.mjs` | يعيد إنتاج جدول الدقة على جهازك |
 
