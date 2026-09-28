@@ -3,7 +3,7 @@
  * فارز بريد الموارد البشرية
  *
  * يقرأ ملف رسائل، يصنّفها إلى فئات، ويكتب النتيجة في ملف جاهز للفتح في Excel.
- * يشتغل باشتراك Claude عبر `claude -p` — بلا مفتاح API وبلا تكلفة إضافية.
+ * يشتغل باشتراك Claude المدفوع عبر `claude -p` — بلا مفتاح API وبلا تكلفة إضافية.
  *
  * التشغيل:
  *   node sort-emails.mjs                      ← على بيانات المثال
@@ -162,7 +162,7 @@ ${list}
   console.log(`الملف   : ${INPUT.split(/[\\/]/).pop()}`);
   console.log(`الرسائل : ${emails.length}`);
   console.log(`الفئات  : ${KEYS.join(' · ')}`);
-  console.log(`${C.dim}يشتغل باشتراك Claude — بلا مفتاح API${C.r}\n`);
+  console.log(`${C.dim}يشتغل باشتراك Claude المدفوع — بلا مفتاح API${C.r}\n`);
 
   const t0 = Date.now();
   let results;

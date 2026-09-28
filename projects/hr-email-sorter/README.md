@@ -30,12 +30,14 @@
 
 ### ١. المتطلبات
 ```bash
-node --version          # يلزم 20 أو أحدث
-npm install -g @anthropic-ai/claude-code
-claude                  # سجّل الدخول باشتراكك مرة واحدة
+node --version     # يلزم 20 أو أحدث
+irm https://claude.ai/install.ps1 | iex     # ويندوز — ثبّت Claude Code
+claude             # سجّل الدخول باشتراكك مرة واحدة
 ```
 
-> **لا تحتاج مفتاح API ولا بطاقة دفع.** يستخدم اشتراك Claude الذي عندك.
+> **يلزمك اشتراك Claude مدفوع** — Pro أو Max أو Team أو Enterprise.
+> الخطة المجانية لا تشمل Claude Code فلن يعمل المشروع معها: [claude.ai/upgrade](https://claude.ai/upgrade)
+> لا تحتاج مفتاح API ولا فاتورة ثانية فوق اشتراكك.
 
 ### ٢. جرّبه على بيانات المثال
 ```bash
