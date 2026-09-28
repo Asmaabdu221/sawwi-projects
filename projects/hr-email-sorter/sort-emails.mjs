@@ -3,42 +3,53 @@
  * فارز بريد الموارد البشرية
  *
  * يقرأ ملف رسائل، يصنّفها إلى فئات، ويكتب النتيجة في ملف جاهز للفتح في Excel.
- * يشتغل باشتراك Claude المدفوع عبر `claude -p` — بلا مفتاح API وبلا تكلفة إضافية.
+ *
+ * ثلاثة محرّكات — يختار المتاح تلقائيًا:
+ *   rules   مجاني · فوري · بلا إنترنت · لا يحتاج أي تثبيت
+ *   ollama  مجاني · نموذج على جهازك · بياناتك لا تغادره
+ *   claude  اشتراك Claude · أعلى جودة · يكتب مسودات الردود
  *
  * التشغيل:
- *   node sort-emails.mjs                      ← على بيانات المثال
- *   node sort-emails.mjs my-emails.csv        ← على ملفك
+ *   node sort-emails.mjs                      ← بيانات المثال، محرّك تلقائي
+ *   node sort-emails.mjs my-emails.csv        ← ملفك
+ *   node sort-emails.mjs --engine rules       ← اختر محرّكًا بنفسك
  *   node sort-emails.mjs --drafts             ← مع مسودات الردود
  */
 
-import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { platform, homedir } from 'node:os';
+import { detectEngine, classify, findClaude, ollamaModels } from './engines.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const WITH_DRAFTS = args.includes('--drafts');
-const INPUT = args.find((a) => !a.startsWith('--')) || join(HERE, 'sample-emails.csv');
+
+// الخيارات التي تأخذ قيمة بعدها — حتى لا تُحسَب قيمتُها اسمَ ملف
+const VALUE_FLAGS = ['engine', 'model'];
+
+const flagValue = (name) => {
+  const i = args.indexOf('--' + name);
+  return i !== -1 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : null;
+};
+
+const consumed = new Set();
+for (const f of VALUE_FLAGS) {
+  const i = args.indexOf('--' + f);
+  if (i !== -1 && args[i + 1] && !args[i + 1].startsWith('--')) consumed.add(i + 1);
+}
+const INPUT = args.find((a, i) => !a.startsWith('--') && !consumed.has(i)) || join(HERE, 'sample-emails.csv');
 
 const CFG = JSON.parse(readFileSync(join(HERE, 'categories.json'), 'utf8'));
 const KEYS = CFG.categories.map((c) => c.key);
 
 const C = { r: '\x1b[0m', b: '\x1b[1m', dim: '\x1b[2m', g: '\x1b[32m', y: '\x1b[33m', red: '\x1b[31m', c: '\x1b[36m' };
 
-// ───────────────── إيجاد claude ─────────────────
-function findClaude() {
-  const isWin = platform() === 'win32';
-  const cands = [
-    process.env.APPDATA && join(process.env.APPDATA, 'npm', 'node_modules', '@anthropic-ai', 'claude-code', 'bin', isWin ? 'claude.exe' : 'claude'),
-    '/usr/local/lib/node_modules/@anthropic-ai/claude-code/bin/claude',
-    join(homedir(), '.local', 'bin', 'claude'),
-  ].filter(Boolean);
-  for (const c of cands) if (existsSync(c)) return c;
-  return 'claude';
-}
-const CLAUDE = findClaude();
+const ENGINE_LABEL = {
+  rules: 'قواعد محلية — مجاني، بلا إنترنت، لا يغادر جهازك',
+  ollama: 'نموذج على جهازك — مجاني، بياناتك لا تغادره',
+  claude: 'اشتراك Claude — أعلى جودة',
+};
 
 // ───────────────── قراءة CSV ─────────────────
 function parseCsv(text) {
@@ -64,83 +75,47 @@ const csvCell = (v) => {
   return /[",\n]/.test(s) ? '"' + s.replaceAll('"', '""') + '"' : s;
 };
 
-// ───────────────── المخطط ─────────────────
-const SCHEMA = {
-  type: 'object',
-  required: ['results'],
-  properties: {
-    results: {
-      type: 'array',
-      items: {
-        type: 'object',
-        required: ['index', 'category', 'confidence', 'reason', 'urgent'],
-        properties: {
-          index: { type: 'integer' },
-          category: { type: 'string', enum: KEYS },
-          confidence: { type: 'string', enum: ['عالية', 'متوسطة', 'منخفضة'] },
-          reason: { type: 'string' },
-          urgent: { type: 'boolean' },
-          draft: { type: 'string' },
-        },
-      },
-    },
-  },
-};
+// ───────────────── اختيار المحرّك ─────────────────
+async function pickEngine() {
+  const want = flagValue('engine') || CFG.engine || 'auto';
 
-function runClaude(prompt) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(CLAUDE, [
-      '-p', prompt, '--model', 'sonnet',
-      '--output-format', 'json',
-      '--json-schema', JSON.stringify(SCHEMA),
-    ], { stdio: ['ignore', 'pipe', 'pipe'], shell: false });
-    let out = '', err = '';
-    child.stdout.on('data', (d) => (out += d));
-    child.stderr.on('data', (d) => (err += d));
-    const kill = setTimeout(() => child.kill('SIGTERM'), 5 * 60_000);
-    child.on('close', (code) => {
-      clearTimeout(kill);
-      if (code !== 0) return reject(new Error(err.slice(0, 200) || `claude exit ${code}`));
-      try {
-        const d = JSON.parse(out);
-        if (d.is_error) return reject(new Error(d.result));
-        if (!d.structured_output) return reject(new Error('لم يرجع مخرَجًا منظَّمًا'));
-        resolve(d.structured_output.results || []);
-      } catch (e) { reject(new Error('تعذّر تحليل المخرَج: ' + e.message)); }
-    });
-    child.on('error', () => reject(new Error(`لم أجد الأمر claude. ثبّته:  npm install -g @anthropic-ai/claude-code`)));
-  });
-}
+  if (want === 'rules') return { name: 'rules' };
 
-function buildPrompt(emails) {
-  const cats = CFG.categories.map((c) => `- ${c.key}: ${c.desc}`).join('\n');
-  const list = emails.map((e, i) =>
-    `[${i}] من: ${e.from}\n    الموضوع: ${e.subject}\n    النص: ${String(e.body).slice(0, 400)}`).join('\n\n');
+  if (want === 'ollama') {
+    const models = await ollamaModels();
+    if (!models || !models.length) {
+      console.error(`${C.red}✗${C.r} Ollama لا يعمل أو لا نماذج فيه.`);
+      console.error(`  شغّله:  ollama serve      ثم:  ollama pull ${CFG.ollamaModel || 'qwen3:4b'}`);
+      console.error(`  أو استخدم المحرّك المجاني الفوري:  node sort-emails.mjs --engine rules`);
+      process.exit(1);
+    }
+    const w = flagValue('model') || CFG.ollamaModel;
+    const found = w && models.find((m) => m === w || m.startsWith(w.split(':')[0]));
+    if (w && !found) {
+      console.error(`${C.red}✗${C.r} النموذج «${w}» غير منزّل. الموجود: ${models.join('، ')}`);
+      console.error(`  نزّله:  ollama pull ${w}`);
+      process.exit(1);
+    }
+    return { name: 'ollama', model: found || models[0] };
+  }
 
-  return `أنت مساعد فرز بريد في إدارة موارد بشرية بشركة سعودية.
+  if (want === 'claude') {
+    const bin = findClaude();
+    if (!bin) {
+      console.error(`${C.red}✗${C.r} لم أجد claude. يلزمه اشتراك Claude مدفوع — أو جرّب:`);
+      console.error(`  node sort-emails.mjs --engine rules     ← مجاني وفوري`);
+      process.exit(1);
+    }
+    return { name: 'claude', bin };
+  }
 
-صنّف كل رسالة إلى فئة واحدة فقط:
-${cats}
-
-قواعد:
-- اختر الفئة التي تحدد **الإجراء المطلوب**، لا الموضوع الظاهري.
-- الشكاوى والمواضيع الحساسة تذهب إلى «شكوى» دائمًا — ولا تكتب لها مسودة رد.
-- urgent = true إذا كانت الرسالة تحتاج ردًا خلال ٢٤ ساعة (كلمات مثل: ${CFG.urgentWords.join('، ')}، أو موعد قريب).
-- confidence: «منخفضة» إن كانت الرسالة مبهمة أو تحتمل فئتين — الصراحة أنفع من التخمين.
-- reason: سبب موجز في سطر واحد.
-${WITH_DRAFTS ? '- draft: مسودة رد رسمية بالعربية الفصحى المبسّطة، ثلاثة أسطر كحد أقصى، للفئات التي تستحق ردًا فقط. اتركها فارغة للشكاوى.' : '- لا تكتب draft.'}
-
-الرسائل:
-
-${list}
-
-أعد التصنيف لكل رسالة بترتيب الفهرس نفسه.`;
+  return detectEngine(CFG);
 }
 
 // ───────────────── التشغيل ─────────────────
 (async () => {
   console.log(`\n${C.b}${C.c}فارز بريد الموارد البشرية${C.r}`);
-  console.log('─'.repeat(52));
+  console.log('─'.repeat(54));
 
   if (!existsSync(INPUT)) {
     console.error(`${C.red}✗${C.r} لم أجد الملف: ${INPUT}`);
@@ -159,28 +134,37 @@ ${list}
     from: r[iFrom] || '', subject: r[iSubj] || '', body: r[iBody] || '',
   }));
 
+  const engine = await pickEngine();
+  const engineName = engine.name === 'ollama' ? `ollama · ${engine.model}` : engine.name;
+
   console.log(`الملف   : ${INPUT.split(/[\\/]/).pop()}`);
   console.log(`الرسائل : ${emails.length}`);
   console.log(`الفئات  : ${KEYS.join(' · ')}`);
-  console.log(`${C.dim}يشتغل باشتراك Claude المدفوع — بلا مفتاح API${C.r}\n`);
+  console.log(`المحرّك  : ${C.b}${engineName}${C.r}`);
+  console.log(`${C.dim}${ENGINE_LABEL[engine.name]}${C.r}\n`);
+
+  if (WITH_DRAFTS && engine.name === 'rules') {
+    console.log(`${C.y}!${C.r} محرّك القواعد لا يكتب مسودات — يحتاج ollama أو claude.\n`);
+  }
 
   const t0 = Date.now();
   let results;
   try {
-    results = await runClaude(buildPrompt(emails));
+    results = await classify(engine, emails, CFG, {
+      withDrafts: WITH_DRAFTS,
+      onProgress: (n, total) => process.stdout.write(`\r${C.dim}يصنّف... ${n}/${total}${C.r}   `),
+    });
   } catch (e) {
-    console.error(`${C.red}✗${C.r} ${e.message}`);
+    console.error(`\n${C.red}✗${C.r} ${e.message}`);
+    console.error(`${C.dim}جرّب المحرّك المجاني الفوري:  node sort-emails.mjs --engine rules${C.r}`);
     process.exit(1);
   }
+  if (engine.name === 'ollama') process.stdout.write('\r' + ' '.repeat(40) + '\r');
   const secs = ((Date.now() - t0) / 1000).toFixed(1);
 
   // ── العرض ──
-  const counts = {};
   const byCat = {};
-  for (const r of results) {
-    counts[r.category] = (counts[r.category] || 0) + 1;
-    (byCat[r.category] ||= []).push(r);
-  }
+  for (const r of results) (byCat[r.category] ||= []).push(r);
 
   for (const key of KEYS) {
     const items = byCat[key];
@@ -212,10 +196,12 @@ ${list}
   const urgent = results.filter((r) => r.urgent).length;
   const low = results.filter((r) => r.confidence === 'منخفضة').length;
 
-  console.log('─'.repeat(52));
-  console.log(`${C.g}✓${C.r} ${results.length} رسالة في ${secs} ثانية`);
+  console.log('─'.repeat(54));
+  console.log(`${C.g}✓${C.r} ${results.length} رسالة في ${secs} ثانية ${C.dim}(${engineName})${C.r}`);
   if (urgent) console.log(`${C.y}⚡${C.r} ${urgent} عاجلة تحتاج ردًا اليوم`);
   if (low) console.log(`${C.y}!${C.r} ${low} تحتاج مراجعتك — الثقة منخفضة`);
   console.log(`${C.g}✓${C.r} الملف: sorted-emails.csv ${C.dim}(افتحه بـExcel)${C.r}`);
-  if (!WITH_DRAFTS) console.log(`\n${C.dim}للحصول على مسودات ردود:  node sort-emails.mjs --drafts${C.r}`);
+  if (!WITH_DRAFTS && engine.name !== 'rules') {
+    console.log(`\n${C.dim}للحصول على مسودات ردود:  node sort-emails.mjs --drafts${C.r}`);
+  }
 })();
