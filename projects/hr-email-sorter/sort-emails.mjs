@@ -122,17 +122,37 @@ async function pickEngine() {
     process.exit(1);
   }
 
-  const rows = parseCsv(readFileSync(INPUT, 'utf8'));
-  const header = rows[0].map((h) => h.trim().toLowerCase());
+  const raw = readFileSync(INPUT, 'utf8');
+  const rows = parseCsv(raw);
+  const header = rows[0].map((h) => h.trim().replace(/^﻿/, '').toLowerCase());
   const iFrom = header.indexOf('from'), iSubj = header.indexOf('subject'), iBody = header.indexOf('body');
   if (iSubj < 0) {
-    console.error(`${C.red}✗${C.r} الملف يحتاج أعمدة: from, subject, body`);
+    console.error(`${C.red}✗${C.r} الملف يحتاج أعمدة اسمها: from, subject, body`);
+    console.error(`${C.dim}  وجدتُ بدلها: ${header.join('، ')}${C.r}`);
+    console.error(`${C.dim}  افتح الملف بـExcel وسمّ الأعمدة الثلاثة بالإنجليزي الصغير.${C.r}`);
+    process.exit(1);
+  }
+
+  // Excel يحفظ CSV بترميز ويندوز افتراضيًا فتتحول العربية إلى رموز.
+  // نكشفها قبل أن نُرسل الملف كله إلى محرّك يحتار فيه.
+  const body = raw.slice(raw.indexOf('\n') + 1);
+  const arabic = (body.match(/[ء-ي]/g) || []).length;
+  const mojibake = (body.match(/[À-ÿ�]/g) || []).length;
+  if (body.trim() && mojibake > arabic) {
+    console.error(`${C.red}✗${C.r} ترميز الملف غير صحيح — العربية تظهر رموزًا.`);
+    console.error(`${C.dim}  في Excel: File ← Save As ← اختر «CSV UTF-8 (Comma delimited)» لا «CSV» وحدها.${C.r}`);
     process.exit(1);
   }
 
   const emails = rows.slice(1).map((r) => ({
     from: r[iFrom] || '', subject: r[iSubj] || '', body: r[iBody] || '',
-  }));
+  })).filter((e) => (e.subject + e.body).trim());
+
+  if (!emails.length) {
+    console.error(`${C.red}✗${C.r} الملف فيه العناوين فقط بلا رسائل.`);
+    console.error(`${C.dim}  افتحه بـExcel واملأ الصفوف تحت العناوين.${C.r}`);
+    process.exit(1);
+  }
 
   const engine = await pickEngine();
   const engineName = engine.name === 'ollama' ? `ollama · ${engine.model}` : engine.name;
