@@ -167,6 +167,17 @@ if (!rows.length) {
   process.exit(1);
 }
 
+// \u0644\u0627 \u0646\u0645\u062d\u0648 \u0639\u0645\u0644\u064b\u0627 \u0643\u062a\u0628\u0647 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645 \u0628\u064a\u062f\u0647 \u0641\u064a \u0627\u0644\u0642\u0627\u0644\u0628
+if (existsSync(OUT) && !args[1]) {
+  const cur = readFileSync(OUT, 'utf8').split('\n').filter((l) => l.trim());
+  const filled = cur.length > 2 || (cur[1] && !cur[1].includes('\u0627\u0646\u0633\u062e'));
+  if (filled) {
+    console.error(`${C.red}\u2717${C.r} \u0627\u0644\u0645\u0644\u0641 ${OUT.split(/[\\/]/).pop()} \u0641\u064a\u0647 \u0628\u064a\u0627\u0646\u0627\u062a \u2014 \u0644\u0646 \u0623\u0645\u062d\u0648\u0647\u0627.`);
+    console.error(`${C.dim}  \u0627\u0643\u062a\u0628 \u0627\u0633\u0645\u064b\u0627 \u0622\u062e\u0631:  node eml-to-csv.mjs emails \u0645\u0646-\u0628\u0631\u064a\u062f\u064a.csv${C.r}`);
+    process.exit(1);
+  }
+}
+
 const lines = ['from,subject,body'];
 for (const r of rows) lines.push([r.from, r.subject, r.body].map(csvCell).join(','));
 writeFileSync(OUT, '\ufeff' + lines.join('\n'), 'utf8');
