@@ -20,6 +20,9 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { detectEngine, classify, findClaude, ollamaModels } from './engines.mjs';
+import { buildReport } from './report.mjs';
+import { spawn } from 'node:child_process';
+import { platform } from 'node:os';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -239,6 +242,19 @@ async function pickEngine() {
     writeFileSync(draftsPath, md.join('\n'), 'utf8');
   }
 
+  // تقرير يُفتح في المتصفح: طرفية ويندوز تعكس العربية وتفصل حروفها
+  const reportPath = join(HERE, 'report.html');
+  writeFileSync(reportPath, buildReport({
+    emails, results, keys: KEYS, engineLabel: engineName, secs, withDrafts: WITH_DRAFTS,
+  }), 'utf8');
+
+  if (!args.includes('--no-open')) {
+    const os = platform();
+    const cmd = os === 'win32' ? 'cmd' : os === 'darwin' ? 'open' : 'xdg-open';
+    const a = os === 'win32' ? ['/c', 'start', '', reportPath] : [reportPath];
+    try { spawn(cmd, a, { stdio: 'ignore', detached: true, shell: false }).unref(); } catch {}
+  }
+
   const urgent = results.filter((r) => r.urgent).length;
   const low = results.filter((r) => r.confidence === 'منخفضة').length;
 
@@ -246,7 +262,8 @@ async function pickEngine() {
   console.log(`${C.g}✓${C.r} ${results.length} رسالة في ${secs} ثانية ${C.dim}(${engineName})${C.r}`);
   if (urgent) console.log(`${C.y}⚡${C.r} ${urgent} عاجلة تحتاج ردًا اليوم`);
   if (low) console.log(`${C.y}!${C.r} ${low} تحتاج مراجعتك — الثقة منخفضة`);
-  console.log(`${C.g}✓${C.r} الملف: sorted-emails.csv ${C.dim}(افتحه بـExcel)${C.r}`);
+  console.log(`${C.g}✓${C.r} التقرير: report.html ${C.dim}(${args.includes('--no-open') ? 'افتحه بمتصفحك' : 'فُتح في متصفحك'})${C.r}`);
+  console.log(`${C.g}✓${C.r} الجدول: sorted-emails.csv ${C.dim}(افتحه بـExcel)${C.r}`);
   if (draftsPath) {
     const n = results.filter((r) => String(r.draft || '').trim()).length;
     console.log(`${C.g}✓${C.r} المسودات: drafts.md ${C.dim}(${n} ردًا جاهزًا للمراجعة)${C.r}`);
